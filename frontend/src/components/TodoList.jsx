@@ -72,6 +72,7 @@ const TodoList = () => {
   const handleSubmitEditTodo = async (e) => {
     e.preventDefault();
     if (editTodoText.trim() === "") {
+      setIsEditTodo(false);
       return;
     }
 
