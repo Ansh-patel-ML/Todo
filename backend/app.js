@@ -4,6 +4,8 @@ const { v4: uuidv4 } = require("uuid");
 const cors = require("cors");
 const fs = require("fs");
 const bodyParser = require("body-parser");
+const { body, validationResult } = require("express-validator");
+
 const PORT = "8080";
 const app = express();
 
@@ -30,7 +32,11 @@ async function processLineByLine() {
   return arr;
 }
 
-app.put("/", (req, res) => {
+app.put("/", [body("id").isUUID(), body("text").notEmpty()], (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
   const todoId = req.body.id;
   const updatedTodoText = req.body.text;
   fs.readFile("todo.txt", "utf-8", (err, data) => {
@@ -38,17 +44,18 @@ app.put("/", (req, res) => {
       res.status(500).send("Error");
     } else {
       const todosArray = data.split("\n").map((todo) => todo.split(" = "));
+      console.log("todosArray", todosArray);
       const filteredTodos = todosArray.filter((todo) => {
         if (todo[0] === todoId) {
           todo[1] = updatedTodoText;
           return todo;
         } else {
-          if (todo[0] !== "") {
-            return todo;
-          }
+          return todo;
         }
       });
+      console.log("filteredTodos", filteredTodos);
       const newTodos = filteredTodos.map((todo) => todo.join(" = ")).join("\n");
+      console.log("newTodos", newTodos);
       fs.writeFile("todo.txt", newTodos, (err) => {
         if (err) {
           res.status(500).send("Error");
@@ -59,7 +66,11 @@ app.put("/", (req, res) => {
   });
 });
 
-app.delete("/", (req, res) => {
+app.delete("/", [body("id").isUUID()], (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
   const todoId = req.body.id;
   fs.readFile("todo.txt", "utf-8", (err, data) => {
     if (err) {
@@ -78,7 +89,11 @@ app.delete("/", (req, res) => {
   });
 });
 
-app.post("/", (req, res) => {
+app.post("/", [body("text").notEmpty()], (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
   todoId = uuidv4();
   const todoText = req.body.text;
   fs.appendFile("todo.txt", `${todoId} = ${todoText} \n`, (err) => {
