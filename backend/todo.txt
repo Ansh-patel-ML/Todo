@@ -1,5 +1,2 @@
-1 = Learning JS 
-3 = Learning NextJS 
-
-4 = Finished NextJs 
-4 = Finished NextJs 
+95ab6f63-1e42-4e67-9e7a-f5f0e28ada90 = NextJe
+5f04dd13-3ff6-4bff-86f1-6bfd8983ee84 = Redux 

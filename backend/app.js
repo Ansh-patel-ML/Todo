@@ -1,8 +1,15 @@
 const express = require("express");
 const readline = require("readline");
+const { v4: uuidv4 } = require("uuid");
+const cors = require("cors");
 const fs = require("fs");
+const bodyParser = require("body-parser");
 const PORT = "8080";
 const app = express();
+
+app.use(cors());
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
 
 async function processLineByLine() {
   const arr = [];
@@ -12,56 +19,55 @@ async function processLineByLine() {
     crlfDelay: Infinity,
   });
   for await (const line of rl) {
-    const todoId = line[0];
-    const todoText = line.trim().slice(4);
+    const todoArr = line.split(" = ");
+    const todoId = todoArr[0];
+    const todoText = todoArr[1].trim();
     arr.push({
-      [todoId]: todoText,
+      id: todoId,
+      text: todoText,
     });
   }
   return arr;
 }
 
 app.put("/", (req, res) => {
-  const todoId = req.query.id;
-  const updatedTodoText = req.query.text;
+  const todoId = req.body.id;
+  const updatedTodoText = req.body.text;
 
   fs.readFile("todo.txt", "utf-8", (err, data) => {
     if (err) {
       res.status(500).send("Error");
     } else {
-      const prevTodo = data
-        .split("\n")
-        .slice(0, todoId - 1)
-        .join("\n");
-      const afterTodo = data.split("\n").slice(todoId).join("\n");
-      const updatedTodo = `${todoId} = ${updatedTodoText} \n`;
-
-      const newTodos = prevTodo + "\n" + updatedTodo + updatedTodo;
+      const todosArray = data.split("\n").map((todo) => todo.split(" = "));
+      const filteredTodos = todosArray.filter((todo) => {
+        if (todo[0] === todoId) {
+          todo[1] = updatedTodoText + "\n";
+          return todo;
+        }
+      });
+      const newTodos = filteredTodos.map((todo) => todo.join(" = ")).join("\n");
       fs.writeFile("todo.txt", newTodos, (err) => {
         if (err) {
           res.status(500).send("Error");
         }
-        res.send("Deleted successfully");
+        res.send("Updated successfully");
       });
     }
   });
 });
 
 app.delete("/", (req, res) => {
-  const todoId = req.query.id;
+  const todoId = req.body.id;
   fs.readFile("todo.txt", "utf-8", (err, data) => {
     if (err) {
       res.status(500).send("Server Error");
     } else {
-      const prevTodo = data
-        .split("\n")
-        .slice(0, todoId - 1)
-        .join("\n");
-      const afterTodo = data.split("\n").slice(todoId).join("\n");
-      const newTodoList = prevTodo + "\n" + afterTodo;
-      fs.writeFile("todo.txt", newTodoList, (err) => {
+      const todosArray = data.split("\n").map((todo) => todo.split(" = "));
+      const filteredTodos = todosArray.filter((todo) => todo[0] !== todoId);
+      const newTodos = filteredTodos.map((todo) => todo.join(" = ")).join("\n");
+      fs.writeFile("todo.txt", newTodos, (err) => {
         if (err) {
-          res.status(500).send("Error");
+          res.status(500).send("Server Error");
         }
         res.send("Deleted successfully");
       });
@@ -70,8 +76,8 @@ app.delete("/", (req, res) => {
 });
 
 app.post("/", (req, res) => {
-  const todoId = req.query.id;
-  const todoText = req.query.text;
+  todoId = uuidv4();
+  const todoText = req.body.text;
   fs.appendFile("todo.txt", `${todoId} = ${todoText} \n`, (err) => {
     if (err) {
       res.status(500).send("Failed to add todo.");
@@ -81,7 +87,7 @@ app.post("/", (req, res) => {
   });
 });
 
-app.get("/", (req, res) => {
+app.get("/", (_, res) => {
   processLineByLine().then((data) => {
     res.send(data);
   });
