@@ -65,21 +65,28 @@ const TodoList = () => {
     setNewTodoText("");
   };
 
-  const handleEdit = async () => {
+  const handleEdit = async (todoText, todoId) => {
+    setEditTodoText({
+      text: todoText,
+      id: todoId,
+    });
     setIsEditTodo(true);
   };
 
   const handleSubmitEditTodo = async (e) => {
     e.preventDefault();
-    if (editTodoText.trim() === "") {
+    if (editTodoText.text.trim() === "") {
       setIsEditTodo(false);
+      setEditTodoText({});
       return;
     }
 
     const todo = {
-      id: todos[0].id,
-      text: editTodoText.trim(),
+      id: editTodoText.id,
+      text: editTodoText.text.trim(),
     };
+
+    console.log(todo);
 
     await editTodo.mutateAsync(todo);
     setEditTodoText("");
@@ -105,7 +112,7 @@ const TodoList = () => {
           <ListItem key={todo.id}>
             <ListItemText primary={todo.text} />
             <ListItemSecondaryAction>
-              <IconButton onClick={() => handleEdit()}>
+              <IconButton onClick={() => handleEdit(todo.text, todo.id)}>
                 <FaEdit />
               </IconButton>
               <IconButton onClick={() => handleDelete(todo.id)}>
@@ -149,8 +156,10 @@ const TodoList = () => {
               variant="outlined"
               label="Edit Todo"
               fullWidth
-              value={editTodoText ? editTodoText : todos[0].text}
-              onChange={(e) => setEditTodoText(e.target.value)}
+              value={editTodoText.text}
+              onChange={(e) =>
+                setEditTodoText((prev) => ({ ...prev, text: e.target.value }))
+              }
             />
           )}
           {isEditTodo && (

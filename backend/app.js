@@ -21,7 +21,7 @@ async function processLineByLine() {
   for await (const line of rl) {
     const todoArr = line.split(" = ");
     const todoId = todoArr[0];
-    const todoText = todoArr[1].trim();
+    const todoText = todoArr[1]?.trim();
     arr.push({
       id: todoId,
       text: todoText,
@@ -33,7 +33,6 @@ async function processLineByLine() {
 app.put("/", (req, res) => {
   const todoId = req.body.id;
   const updatedTodoText = req.body.text;
-
   fs.readFile("todo.txt", "utf-8", (err, data) => {
     if (err) {
       res.status(500).send("Error");
@@ -41,8 +40,12 @@ app.put("/", (req, res) => {
       const todosArray = data.split("\n").map((todo) => todo.split(" = "));
       const filteredTodos = todosArray.filter((todo) => {
         if (todo[0] === todoId) {
-          todo[1] = updatedTodoText + "\n";
+          todo[1] = updatedTodoText;
           return todo;
+        } else {
+          if (todo[0] !== "") {
+            return todo;
+          }
         }
       });
       const newTodos = filteredTodos.map((todo) => todo.join(" = ")).join("\n");
