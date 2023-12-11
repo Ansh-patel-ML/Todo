@@ -1,0 +1,5 @@
+1 = Learning JS 
+3 = Learning NextJS 
+
+4 = Finished NextJs 
+4 = Finished NextJs 
